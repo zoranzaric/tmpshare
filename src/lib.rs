@@ -1,3 +1,4 @@
+//! `tmpshare` is a tool to share files.
 extern crate checksums;
 extern crate chrono;
 

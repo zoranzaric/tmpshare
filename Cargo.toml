@@ -2,6 +2,12 @@
 name = "tmpshare"
 version = "0.1.0"
 authors = ["Zoran Zaric <zz@zoranzaric.de>"]
+description = "A tool to share files"
+
+readme = "README.md"
+license = "MIT/Apache-2.0"
+homepage = "https://github.com/zoranzaric/tmpshare"
+repository = "https://github.com/zoranzaric/tmpshare.git"
 
 [dependencies]
 checksums = "0.5.5"
