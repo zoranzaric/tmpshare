@@ -1,0 +1,5 @@
+- Clean up examples and make commands from them
+- Add HTTP "endpoint"
+- Add cleanup method
+- Configure travis-ci
+- Documentation
