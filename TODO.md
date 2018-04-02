@@ -1,4 +1,5 @@
-- Remove unwraps() where apropriate
+- Remove `unwrap()`s where apropriate
+- Add 404 page for hashes that don't exist
 - Add cleanup method
 - Unit tests
 - Configure travis-ci
