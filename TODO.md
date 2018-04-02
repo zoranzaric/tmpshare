@@ -1,5 +1,4 @@
-- Clean up examples and make commands from them
-- Add HTTP "endpoint"
+- Remove unwraps() where apropriate
 - Add cleanup method
 - Unit tests
 - Configure travis-ci
