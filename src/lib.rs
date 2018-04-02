@@ -106,7 +106,7 @@ mod tests {
     use serde_json;
 
     #[test]
-    fn it_works() {
+    fn parsing_metadata_json_works() {
         let metadata_json_str = r#"{
             "file_name": "TODO.md",
             "hash": "D76A099F5201CBD3C6DADDBDB56C1CF5FF8210198B862AFB92E919D492DC3751",
