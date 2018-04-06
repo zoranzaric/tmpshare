@@ -1,5 +1,4 @@
-- Remove `unwrap()`s where apropriate
-- Add 404 page for hashes that don't exist
+- Set `Content-Disposition` header for HTTP /get
 - Add cleanup method
 - Unit tests
 - Configure travis-ci

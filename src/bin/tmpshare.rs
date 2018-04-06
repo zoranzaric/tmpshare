@@ -78,8 +78,10 @@ pub fn main() {
 
     match matches.subcommand_name() {
         Some("add") => {
+            // `unwrap`ing ok because we have the add command
             let matches = matches.subcommand_matches("add").unwrap();
 
+            // `unwrap`ing ok because FILEPATH is required
             let filepath = matches.value_of("FILEPATH").unwrap();
 
             let path = Path::new(filepath);
@@ -100,29 +102,55 @@ pub fn main() {
 
             let meta_file_name = format!("{}.meta.json", metadata.hash);
             parent.push(&meta_file_name);
-            let mut meta_file = File::create(meta_file_name).unwrap();
-            let _ = meta_file.write_all(serde_json::to_string(&metadata).unwrap().as_bytes());
+            match File::create(&meta_file_name) {
+                Ok(mut meta_file) => {
+                    match serde_json::to_string(&metadata) {
+                        Ok(json_string) => {
+                            let _ = meta_file.write_all(json_string.as_bytes());
+                            println!("{}", metadata.hash);
+                        },
+                        Err(e) => {
+                            eprintln!("An error occured while serializing the metadata \"{:?}\": {}", metadata, e);
+                        }
+                    }
+                },
+                Err(e) => {
+                    eprintln!("An error occured while opening the file \"{}\": {}", meta_file_name, e);
+                }
+            }
 
-            println!("{}", metadata.hash);
         }
         Some("serve") => {
+            // `unwrap`ing ok because we have the serve command
             let matches = matches.subcommand_matches("serve").unwrap();
 
+            // `unwrap`ing ok because address has a default
             let address = matches.value_of("address").unwrap();
-            let port: u16 = matches.value_of("port").unwrap().parse().unwrap();
+            // `unwrap`ing ok because port has a default
+            match matches.value_of("port").unwrap().parse::<u16>() {
+                Ok(port) => {
+                    println!("{}:{}", address, port);
 
-            println!("{}:{}", address, port);
+                    match Config::build(Environment::Staging)
+                        .address(address)
+                        .port(port)
+                        .finalize() {
+                        Ok(config) => {
+                            rocket::custom(config, true)
+                                .mount("/", routes![get])
+                                .catch(errors![not_found])
+                                .launch();
+                        },
+                        Err(e) => {
+                            eprintln!("Error while configuring the web server: {}", e);
+                        }
+                    }
 
-            let config = Config::build(Environment::Staging)
-                .address(address)
-                .port(port)
-                .finalize()
-                .unwrap();
-
-            rocket::custom(config, true)
-                .mount("/", routes![get])
-                .catch(errors![not_found])
-                .launch();
+                },
+                Err(e) => {
+                    eprintln!("Error while parsing port \"{}\": {}", matches.value_of("port").unwrap(), e);
+                }
+            }
         }
         _ => {
             eprintln!("Unknown subcommand");

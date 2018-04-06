@@ -71,11 +71,17 @@ pub fn get_path(hash: &str) -> Result<PathBuf, io::Error> {
         return Err(io::Error::new(io::ErrorKind::NotFound, "File not found"));
     }
 
-    let mut meta_file = File::open(meta_path).unwrap();
-    let mut meta_contents = String::new();
-    let _ = meta_file.read_to_string(&mut meta_contents);
-    let meta: Metadata = serde_json::from_str(meta_contents.as_str()).unwrap();
-    Ok(PathBuf::from(meta.file_name.as_str()))
+    match File::open(meta_path) {
+        Ok(mut meta_file) => {
+            let mut meta_contents = String::new();
+            let _ = meta_file.read_to_string(&mut meta_contents);
+            match serde_json::from_str::<Metadata>(meta_contents.as_str()) {
+                Ok(meta) => Ok(PathBuf::from(meta.file_name.as_str())),
+                Err(e) => Err(io::Error::new(io::ErrorKind::InvalidData, format!("Could not parse metadata: {}", e)))
+            }
+        },
+        Err(e) => Err(e)
+    }
 }
 
 pub fn add(path: &Path) -> Result<Metadata, io::Error> {
