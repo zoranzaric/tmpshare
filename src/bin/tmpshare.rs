@@ -6,9 +6,7 @@ use clap::{App, AppSettings, Arg, SubCommand};
 
 extern crate serde_json;
 
-use std::path::{Path, PathBuf};
-use std::fs::File;
-use std::io::Write;
+use std::path::Path;
 
 pub fn main() {
     let matches = App::new("tmpshare")
@@ -61,39 +59,13 @@ pub fn main() {
 
             let path = Path::new(filepath);
 
-            let metadata = match tmpshare::storage::add(path) {
-                Ok(metadata) => metadata,
-                Err(err) => {
-                    println!("{}", err);
-                    std::process::exit(1);
-                }
-            };
-            let mut parent = match path.parent() {
-                Some(parent) => PathBuf::from(parent),
-                None => {
-                    std::process::exit(1);
-                }
-            };
-
-            let meta_file_name = format!("{}.meta.json", metadata.hash);
-            parent.push(&meta_file_name);
-            match File::create(&meta_file_name) {
-                Ok(mut meta_file) => {
-                    match serde_json::to_string(&metadata) {
-                        Ok(json_string) => {
-                            let _ = meta_file.write_all(json_string.as_bytes());
-                            println!("{}", metadata.hash);
-                        },
-                        Err(e) => {
-                            eprintln!("An error occured while serializing the metadata \"{:?}\": {}", metadata, e);
-                        }
-                    }
-                },
+            match tmpshare::storage::add(path) {
+                Ok(metadata) => println!("{}", metadata.hash),
                 Err(e) => {
-                    eprintln!("An error occured while opening the file \"{}\": {}", meta_file_name, e);
+                    eprintln!("{}", e);
+                    std::process::exit(1);
                 }
             }
-
         }
         Some("serve") => {
             // `unwrap`ing ok because we have the serve command
@@ -103,18 +75,20 @@ pub fn main() {
             let address = matches.value_of("address").unwrap();
             // `unwrap`ing ok because port has a default
             match matches.value_of("port").unwrap().parse::<u16>() {
-                Ok(port) => {
-                    println!("{}:{}", address, port);
-
-                    tmpshare::http::serve(address, port);
-                },
+                Ok(port) => tmpshare::http::serve(address, port),
                 Err(e) => {
-                    eprintln!("Error while parsing port \"{}\": {}", matches.value_of("port").unwrap(), e);
+                    eprintln!(
+                        "Error while parsing port \"{}\": {}",
+                        matches.value_of("port").unwrap(),
+                        e
+                    );
+                    std::process::exit(1);
                 }
             }
         }
         _ => {
             eprintln!("Unknown subcommand");
+            std::process::exit(1);
         }
     }
 }

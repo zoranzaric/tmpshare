@@ -1,9 +1,10 @@
 use chrono::prelude::*;
 
 use std::fs::File;
-use std::path::{Path, PathBuf};
 use std::io;
 use std::io::Read;
+use std::io::Write;
+use std::path::{Path, PathBuf};
 
 extern crate checksums;
 
@@ -14,8 +15,10 @@ extern crate serde_json;
 pub struct Metadata {
     pub file_name: String,
     pub hash: String,
-    #[serde(with = "my_date_format")] create_date: NaiveDateTime,
-    #[serde(with = "my_date_format")] last_access_date: NaiveDateTime,
+    #[serde(with = "my_date_format")]
+    create_date: NaiveDateTime,
+    #[serde(with = "my_date_format")]
+    last_access_date: NaiveDateTime,
 }
 
 impl Metadata {
@@ -72,10 +75,13 @@ pub fn get_path(hash: &str) -> Result<PathBuf, io::Error> {
             let _ = meta_file.read_to_string(&mut meta_contents);
             match serde_json::from_str::<Metadata>(meta_contents.as_str()) {
                 Ok(meta) => Ok(PathBuf::from(meta.file_name.as_str())),
-                Err(e) => Err(io::Error::new(io::ErrorKind::InvalidData, format!("Could not parse metadata: {}", e)))
+                Err(e) => Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!("Could not parse metadata: {}", e),
+                )),
             }
-        },
-        Err(e) => Err(e)
+        }
+        Err(e) => Err(e),
     }
 }
 
@@ -97,7 +103,39 @@ pub fn add(path: &Path) -> Result<Metadata, io::Error> {
             return Err(io::Error::new(io::ErrorKind::NotFound, "File not found"));
         }
     };
-    Ok(Metadata::new(String::from(file_name), hash))
+    let metadata = Metadata::new(String::from(file_name), hash);
+
+    let mut parent = match path.parent() {
+        Some(parent) => PathBuf::from(parent),
+        None => {
+            return Err(io::Error::new(io::ErrorKind::NotFound, "File not found"));
+        }
+    };
+
+    let meta_file_name = format!("{}.meta.json", metadata.hash);
+    parent.push(&meta_file_name);
+    match File::create(&meta_file_name) {
+        Ok(mut meta_file) => match serde_json::to_string(&metadata) {
+            Ok(json_string) => {
+                let _ = meta_file.write_all(json_string.as_bytes());
+                Ok(metadata)
+            }
+            Err(e) => Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!(
+                    "An error occured while serializing the metadata \"{:?}\": {}",
+                    metadata, e
+                ),
+            )),
+        },
+        Err(e) => Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!(
+                "An error occured while opening the file \"{}\": {}",
+                meta_file_name, e
+            ),
+        )),
+    }
 }
 
 #[cfg(test)]
