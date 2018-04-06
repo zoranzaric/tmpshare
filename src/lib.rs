@@ -64,8 +64,6 @@ pub fn hash_file(path: &Path) -> Result<String, io::Error> {
     Ok(checksums::hash_file(path, checksums::Algorithm::SHA2256))
 }
 
-// TODO: really understand lifetimes and return a proper `Path`.  We return a
-// `PathBuf` here just to trick the borrow checker.
 pub fn get_path(hash: &str) -> Result<PathBuf, io::Error> {
     let meta_path_filename = format!("{}.meta.json", hash);
     let meta_path = Path::new(&meta_path_filename);
