@@ -1,7 +1,7 @@
 extern crate tmpshare;
 
-use std::path::Path;
 use std::env::args;
+use std::path::Path;
 
 pub fn main() {
     let path = match args().nth(1) {
