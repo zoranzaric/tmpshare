@@ -1,6 +1,7 @@
 #![feature(plugin)]
 #![plugin(rocket_codegen)]
 extern crate rocket;
+use rocket::Request;
 use rocket::config::{Config, Environment};
 use rocket::response::NamedFile;
 
@@ -17,9 +18,21 @@ use std::fs::File;
 use std::io::Write;
 
 #[get("/get/<hash>")]
-fn get(hash: String) -> NamedFile {
-    let path = tmpshare::get_path(&hash).unwrap();
-    NamedFile::open(&path).unwrap()
+fn get(hash: String) -> Option<NamedFile> {
+    match tmpshare::get_path(&hash) {
+        Ok(path) => {
+            match NamedFile::open(&path) {
+                Ok(named_file) => Some(named_file),
+                Err(_) => None
+            }
+        },
+        Err(_) => None
+    }
+}
+
+#[error(404)]
+fn not_found(_req: &Request) -> String {
+    "🤷‍♂️".to_string()
 }
 
 pub fn main() {
@@ -108,6 +121,7 @@ pub fn main() {
 
             rocket::custom(config, true)
                 .mount("/", routes![get])
+                .catch(errors![not_found])
                 .launch();
         }
         _ => {
