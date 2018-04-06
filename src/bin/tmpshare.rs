@@ -61,7 +61,7 @@ pub fn main() {
 
             let path = Path::new(filepath);
 
-            let metadata = match tmpshare::storage::add(&path) {
+            let metadata = match tmpshare::storage::add(path) {
                 Ok(metadata) => metadata,
                 Err(err) => {
                     println!("{}", err);
