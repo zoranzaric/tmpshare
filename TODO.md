@@ -1,3 +1,6 @@
+- Implement list command
+- Implement Trees, so we can serve collections of files
+- Implement list HTTP endpoint (with authentication)
 - Add cleanup method
 - Unit tests
 - Documentation
