@@ -1,11 +1,3 @@
-#![feature(plugin)]
-#![plugin(rocket_codegen)]
-extern crate rocket;
-use rocket::Request;
-use rocket::config::{Config, Environment};
-use rocket::response;
-use rocket::response::{NamedFile, Response};
-
 extern crate tmpshare;
 
 #[macro_use]
@@ -17,42 +9,6 @@ extern crate serde_json;
 use std::path::{Path, PathBuf};
 use std::fs::File;
 use std::io::Write;
-
-pub struct TmpShareFile{
-    file: NamedFile,
-    file_name: String
-}
-
-impl <'r> response::Responder<'r> for TmpShareFile {
-    fn respond_to(self, req: &Request) -> response::Result<'r> {
-        Response::build_from(self.file.respond_to(req)?)
-            .raw_header("Content-Disposition", format!("attachment; filename={}", self.file_name))
-            .ok()
-    }
-}
-
-#[get("/get/<hash>")]
-fn get(hash: String) -> Option<TmpShareFile> {
-    match tmpshare::get_path(&hash) {
-        Ok(path) => {
-            match NamedFile::open(&path) {
-                Ok(named_file) => {
-                    Some(TmpShareFile{
-                        file: named_file,
-                        file_name: path.file_name().unwrap().to_str().unwrap().to_string()
-                    })
-                },
-                Err(_) => None
-            }
-        },
-        Err(_) => None
-    }
-}
-
-#[error(404)]
-fn not_found(_req: &Request) -> String {
-    "🤷‍♂️".to_string()
-}
 
 pub fn main() {
     let matches = App::new("tmpshare")
@@ -105,7 +61,7 @@ pub fn main() {
 
             let path = Path::new(filepath);
 
-            let metadata = match tmpshare::add(&path) {
+            let metadata = match tmpshare::storage::add(&path) {
                 Ok(metadata) => metadata,
                 Err(err) => {
                     println!("{}", err);
@@ -150,21 +106,7 @@ pub fn main() {
                 Ok(port) => {
                     println!("{}:{}", address, port);
 
-                    match Config::build(Environment::Staging)
-                        .address(address)
-                        .port(port)
-                        .finalize() {
-                        Ok(config) => {
-                            rocket::custom(config, true)
-                                .mount("/", routes![get])
-                                .catch(errors![not_found])
-                                .launch();
-                        },
-                        Err(e) => {
-                            eprintln!("Error while configuring the web server: {}", e);
-                        }
-                    }
-
+                    tmpshare::http::serve(address, port);
                 },
                 Err(e) => {
                     eprintln!("Error while parsing port \"{}\": {}", matches.value_of("port").unwrap(), e);

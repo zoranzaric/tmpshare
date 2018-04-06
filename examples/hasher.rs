@@ -14,7 +14,7 @@ pub fn main() {
 
     let path = Path::new(&path);
 
-    match tmpshare::hash_file(path) {
+    match tmpshare::storage::hash_file(path) {
         Ok(hash) => println!("{}", hash),
         Err(err) => {
             println!("{}", err);
