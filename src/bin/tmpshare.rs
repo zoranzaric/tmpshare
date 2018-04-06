@@ -47,8 +47,8 @@ pub fn main() {
                 .arg(
                     Arg::with_name("address")
                         .long("address")
-                        .help("Sets the addres to bind the HTTP server to")
-                        .default_value("127.0.01")
+                        .help("Sets the address to bind the HTTP server to")
+                        .default_value("127.0.0.1")
                         .takes_value(true)
                         .required(false),
                 )
