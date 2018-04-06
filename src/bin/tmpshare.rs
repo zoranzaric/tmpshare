@@ -3,7 +3,8 @@
 extern crate rocket;
 use rocket::Request;
 use rocket::config::{Config, Environment};
-use rocket::response::NamedFile;
+use rocket::response;
+use rocket::response::{NamedFile, Response};
 
 extern crate tmpshare;
 
@@ -17,12 +18,30 @@ use std::path::{Path, PathBuf};
 use std::fs::File;
 use std::io::Write;
 
+pub struct TmpShareFile{
+    file: NamedFile,
+    file_name: String
+}
+
+impl <'r> response::Responder<'r> for TmpShareFile {
+    fn respond_to(self, req: &Request) -> response::Result<'r> {
+        Response::build_from(self.file.respond_to(req)?)
+            .raw_header("Content-Disposition", format!("attachment; filename={}", self.file_name))
+            .ok()
+    }
+}
+
 #[get("/get/<hash>")]
-fn get(hash: String) -> Option<NamedFile> {
+fn get(hash: String) -> Option<TmpShareFile> {
     match tmpshare::get_path(&hash) {
         Ok(path) => {
             match NamedFile::open(&path) {
-                Ok(named_file) => Some(named_file),
+                Ok(named_file) => {
+                    Some(TmpShareFile{
+                        file: named_file,
+                        file_name: path.file_name().unwrap().to_str().unwrap().to_string()
+                    })
+                },
                 Err(_) => None
             }
         },

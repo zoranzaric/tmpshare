@@ -1,5 +1,3 @@
-- Set `Content-Disposition` header for HTTP /get
 - Add cleanup method
 - Unit tests
-- Configure travis-ci
 - Documentation
