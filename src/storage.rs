@@ -1,5 +1,6 @@
 use chrono::prelude::*;
 
+use std::fmt;
 use std::fs::File;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -27,6 +28,12 @@ impl Metadata {
             create_date: Utc::now().naive_local(),
             last_access_date: Utc::now().naive_local(),
         }
+    }
+}
+
+impl fmt::Display for Metadata {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}: {}", self.hash, self.file_name)
     }
 }
 
@@ -67,6 +74,10 @@ pub fn get_metadata(hash: &str) -> Result<Metadata, io::Error> {
         return Err(io::Error::new(io::ErrorKind::NotFound, "File not found"));
     }
 
+    read_metadata(meta_path)
+}
+
+pub fn read_metadata(meta_path: &Path) -> Result<Metadata, io::Error> {
     match File::open(meta_path) {
         Ok(meta_file) => {
             match serde_json::from_reader::<_, Metadata>(meta_file) {

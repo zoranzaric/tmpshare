@@ -4,6 +4,9 @@ use tmpshare::cli::TmpShareOpt;
 extern crate structopt;
 use structopt::StructOpt;
 
+extern crate glob;
+use glob::glob;
+
 pub fn main() {
     match TmpShareOpt::from_args() {
         TmpShareOpt::Add { filename } => {
@@ -17,6 +20,19 @@ pub fn main() {
         },
         TmpShareOpt::Serve { address, port } => {
             tmpshare::http::serve(&address, port)
+        },
+        TmpShareOpt::List { }=> {
+            for entry in glob("*.meta.json").unwrap() {
+                match entry {
+                    Ok(path) => {
+                        match tmpshare::storage::read_metadata(path.as_path()) {
+                            Ok(meta) => println!("{}", meta),
+                            Err(e) => eprintln!("{}", e),
+                        }
+                    },
+                    Err(_) => { },
+                }
+            }
         }
     }
 }
