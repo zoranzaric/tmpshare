@@ -74,7 +74,10 @@ pub fn get_metadata(hash: &str) -> Result<Metadata, io::Error> {
         return Err(io::Error::new(io::ErrorKind::NotFound, "File not found"));
     }
 
-    read_metadata(meta_path)
+    let mut meta = read_metadata(meta_path)?;
+    meta.last_access_date = Utc::now().naive_local();
+
+    write_metadata(meta_path, meta)
 }
 
 pub fn read_metadata(meta_path: &Path) -> Result<Metadata, io::Error> {
@@ -112,6 +115,10 @@ pub fn add(path: &Path) -> Result<Metadata, io::Error> {
     };
     let metadata = Metadata::new(String::from(file_name), hash);
 
+    write_metadata(path, metadata)
+}
+
+fn write_metadata(path: &Path, metadata: Metadata) -> Result<Metadata, io::Error> {
     let mut parent = match path.parent() {
         Some(parent) => PathBuf::from(parent),
         None => {
