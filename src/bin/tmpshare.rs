@@ -1,94 +1,22 @@
 extern crate tmpshare;
+use tmpshare::cli::TmpShareOpt;
 
-#[macro_use]
-extern crate clap;
-use clap::{App, AppSettings, Arg, SubCommand};
-
-extern crate serde_json;
-
-use std::path::Path;
+extern crate structopt;
+use structopt::StructOpt;
 
 pub fn main() {
-    let matches = App::new("tmpshare")
-        .version(crate_version!())
-        .author(crate_authors!())
-        .setting(AppSettings::SubcommandRequiredElseHelp)
-        .subcommand(
-            SubCommand::with_name("add")
-                .about("Adds a file to tmpshare")
-                .version(crate_version!())
-                .author(crate_authors!())
-                .arg(
-                    Arg::with_name("FILEPATH")
-                        .help("The file to add")
-                        .required(true)
-                        .index(1),
-                ),
-        )
-        .subcommand(
-            SubCommand::with_name("serve")
-                .about("Serves file via HTTP")
-                .version(crate_version!())
-                .author(crate_authors!())
-                .arg(
-                    Arg::with_name("address")
-                        .long("address")
-                        .help("Sets the address to bind the HTTP server to")
-                        .default_value("127.0.0.1")
-                        .takes_value(true)
-                        .required(false),
-                )
-                .arg(
-                    Arg::with_name("port")
-                        .long("port")
-                        .help("Sets the port to bind the HTTP server to")
-                        .default_value("8080")
-                        .takes_value(true)
-                        .required(false),
-                ),
-        )
-        .get_matches();
-
-    match matches.subcommand_name() {
-        Some("add") => {
-            // `unwrap`ing ok because we have the add command
-            let matches = matches.subcommand_matches("add").unwrap();
-
-            // `unwrap`ing ok because FILEPATH is required
-            let filepath = matches.value_of("FILEPATH").unwrap();
-
-            let path = Path::new(filepath);
-
-            match tmpshare::storage::add(path) {
+    match TmpShareOpt::from_args() {
+        TmpShareOpt::Add { filename } => {
+            match tmpshare::storage::add(filename.as_path()) {
                 Ok(metadata) => println!("{}", metadata.hash),
                 Err(e) => {
                     eprintln!("{}", e);
                     std::process::exit(1);
                 }
             }
-        }
-        Some("serve") => {
-            // `unwrap`ing ok because we have the serve command
-            let matches = matches.subcommand_matches("serve").unwrap();
-
-            // `unwrap`ing ok because address has a default
-            let address = matches.value_of("address").unwrap();
-            // `unwrap`ing ok because port has a default
-            match matches.value_of("port").unwrap().parse::<u16>() {
-                Ok(port) => tmpshare::http::serve(address, port),
-                Err(e) => {
-                    eprintln!(
-                        "Error while parsing port \"{}\": {}",
-                        matches.value_of("port").unwrap(),
-                        e
-                    );
-                    std::process::exit(1);
-                }
-            }
-        }
-        _ => {
-            eprintln!("Unknown subcommand");
-            std::process::exit(1);
+        },
+        TmpShareOpt::Serve { address, port } => {
+            tmpshare::http::serve(&address, port)
         }
     }
 }
