@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use rocket;
 use rocket::Request;
 use rocket::config::{Config, Environment};
@@ -22,11 +24,11 @@ impl<'r> response::Responder<'r> for TmpShareFile {
 
 #[get("/get/<hash>")]
 fn get(hash: String) -> Option<TmpShareFile> {
-    match super::storage::get_path(&hash) {
-        Ok(path) => match NamedFile::open(&path) {
+    match super::storage::get_metadata(&hash) {
+        Ok(metadata) => match NamedFile::open(Path::new(&metadata.file_name)) {
             Ok(named_file) => Some(TmpShareFile {
                 file: named_file,
-                file_name: path.file_name().unwrap().to_str().unwrap().to_string(),
+                file_name: metadata.file_name.to_string(),
             }),
             Err(_) => None,
         },

@@ -1,5 +1,3 @@
-- Refactor `tmpshare::storage::get_path(hash) -> Result<PathBuf, _>` to
-  `tmpshare::storage::get(hash) -> Result<Metadata,_>`
 - update `last_access_date` on get
 - Use failure crate
 - Implement list command

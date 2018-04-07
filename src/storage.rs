@@ -60,7 +60,7 @@ pub fn hash_file(path: &Path) -> Result<String, io::Error> {
     Ok(checksums::hash_file(path, checksums::Algorithm::SHA2256))
 }
 
-pub fn get_path(hash: &str) -> Result<PathBuf, io::Error> {
+pub fn get_metadata(hash: &str) -> Result<Metadata, io::Error> {
     let meta_path_filename = format!("{}.meta.json", hash);
     let meta_path = Path::new(&meta_path_filename);
     if !meta_path.exists() {
@@ -70,7 +70,7 @@ pub fn get_path(hash: &str) -> Result<PathBuf, io::Error> {
     match File::open(meta_path) {
         Ok(meta_file) => {
             match serde_json::from_reader::<_, Metadata>(meta_file) {
-                Ok(meta) => Ok(PathBuf::from(meta.file_name.as_str())),
+                Ok(meta) => Ok(meta),
                 Err(e) => Err(io::Error::new(
                     io::ErrorKind::InvalidData,
                     format!("Could not parse metadata: {}", e),

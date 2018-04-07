@@ -11,6 +11,6 @@ pub fn main() {
         }
     };
 
-    let path = tmpshare::storage::get_path(&hash).unwrap();
-    println!("{:?}", path.as_path())
+    let meta = tmpshare::storage::get_metadata(&hash).unwrap();
+    println!("{:?}", meta)
 }
