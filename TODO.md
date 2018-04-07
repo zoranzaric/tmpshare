@@ -1,4 +1,3 @@
-- Simplify JSON deserialization and serialization
 - Refactor `clap`to `structopt`
 - Refactor `tmpshare::storage::get_path(hash) -> Result<PathBuf, _>` to
   `tmpshare::storage::get(hash) -> Result<Metadata,_>`

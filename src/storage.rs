@@ -2,8 +2,6 @@ use chrono::prelude::*;
 
 use std::fs::File;
 use std::io;
-use std::io::Read;
-use std::io::Write;
 use std::path::{Path, PathBuf};
 
 extern crate checksums;
@@ -70,10 +68,8 @@ pub fn get_path(hash: &str) -> Result<PathBuf, io::Error> {
     }
 
     match File::open(meta_path) {
-        Ok(mut meta_file) => {
-            let mut meta_contents = String::new();
-            let _ = meta_file.read_to_string(&mut meta_contents);
-            match serde_json::from_str::<Metadata>(meta_contents.as_str()) {
+        Ok(meta_file) => {
+            match serde_json::from_reader::<_, Metadata>(meta_file) {
                 Ok(meta) => Ok(PathBuf::from(meta.file_name.as_str())),
                 Err(e) => Err(io::Error::new(
                     io::ErrorKind::InvalidData,
@@ -115,9 +111,8 @@ pub fn add(path: &Path) -> Result<Metadata, io::Error> {
     let meta_file_name = format!("{}.meta.json", metadata.hash);
     parent.push(&meta_file_name);
     match File::create(&meta_file_name) {
-        Ok(mut meta_file) => match serde_json::to_string(&metadata) {
-            Ok(json_string) => {
-                let _ = meta_file.write_all(json_string.as_bytes());
+        Ok(meta_file) => match serde_json::to_writer(meta_file, &metadata) {
+            Ok(_) => {
                 Ok(metadata)
             }
             Err(e) => Err(io::Error::new(
