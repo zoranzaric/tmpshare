@@ -1,5 +1,7 @@
+//! Abstracting away cli argument parsing.
 use std::path::PathBuf;
 
+/// Arguments for the `tmpshare` tool.
 #[derive(StructOpt, Debug)]
 #[structopt(name = "tmpshare")]
 pub enum TmpShareOpt {

@@ -1,3 +1,4 @@
+//! `tmpshare` is a tool to share files for a short time via HTTP.
 extern crate tmpshare;
 use tmpshare::cli::TmpShareOpt;
 

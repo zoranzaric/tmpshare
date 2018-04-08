@@ -1,3 +1,4 @@
+//! Abstracting away HTTP serving.
 use std::path::Path;
 
 use rocket;
@@ -6,6 +7,7 @@ use rocket::config::{Config, Environment};
 use rocket::response;
 use rocket::response::{NamedFile, Response};
 
+/// A served file.
 pub struct TmpShareFile {
     file: NamedFile,
     file_name: String,
@@ -41,14 +43,16 @@ fn not_found(_req: &Request) -> String {
     "🤷‍♂️".to_string()
 }
 
+/// Helper to start the HTTP server.
 pub fn serve(address: &str, port: u16) {
-    match Config::build(Environment::Staging)
+    match Config::build(Environment::Production)
         .address(address)
         .port(port)
         .finalize()
     {
         Ok(config) => {
-            rocket::custom(config, true)
+            println!("Serving from http://{}:{}", address, port);
+            rocket::custom(config, false)
                 .mount("/", routes![get])
                 .catch(errors![not_found])
                 .launch();

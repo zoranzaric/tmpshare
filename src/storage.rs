@@ -1,3 +1,4 @@
+//! Abstracting away `Metadata` storage and file access.
 use chrono::prelude::*;
 
 use std::fmt;
@@ -10,6 +11,7 @@ extern crate checksums;
 extern crate serde;
 extern crate serde_json;
 
+/// All the metadata for a served file.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Metadata {
     pub file_name: String,
@@ -60,6 +62,7 @@ mod my_date_format {
     }
 }
 
+/// Calculates the Sha256 hash for a given file.
 pub fn hash_file(path: &Path) -> Result<String, io::Error> {
     if !path.exists() {
         return Err(io::Error::new(io::ErrorKind::NotFound, "File not found"));
@@ -67,6 +70,7 @@ pub fn hash_file(path: &Path) -> Result<String, io::Error> {
     Ok(checksums::hash_file(path, checksums::Algorithm::SHA2256))
 }
 
+/// Retrieves the `Metadata` for a given hash.
 pub fn get_metadata(hash: &str) -> Result<Metadata, io::Error> {
     let meta_path_filename = format!("{}.meta.json", hash);
     let meta_path = Path::new(&meta_path_filename);
@@ -80,6 +84,7 @@ pub fn get_metadata(hash: &str) -> Result<Metadata, io::Error> {
     write_metadata(meta_path, meta)
 }
 
+/// Retrieves the `Metadata` for a given file.
 pub fn read_metadata(meta_path: &Path) -> Result<Metadata, io::Error> {
     match File::open(meta_path) {
         Ok(meta_file) => {
@@ -95,6 +100,7 @@ pub fn read_metadata(meta_path: &Path) -> Result<Metadata, io::Error> {
     }
 }
 
+/// Constructs the `Metadata` for a given file and writes it to the filesystem.
 pub fn add(path: &Path) -> Result<Metadata, io::Error> {
     let hash = match hash_file(path) {
         Ok(hash) => hash,
