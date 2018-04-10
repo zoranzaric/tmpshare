@@ -1,6 +1,6 @@
 [package]
 name = "tmpshare"
-version = "0.3.0-pre"
+version = "1.0.0"
 authors = ["Zoran Zaric <zz@zoranzaric.de>"]
 description = "A tool to share files"
 

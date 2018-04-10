@@ -1,5 +1,0 @@
-- Use failure crate
-- Implement Trees, so we can serve collections of files
-- Implement list HTTP endpoint (with authentication)
-- Unit tests
-- Documentation
