@@ -11,6 +11,8 @@ extern crate checksums;
 extern crate serde;
 extern crate serde_json;
 
+use glob::glob;
+
 /// All the metadata for a served file.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Metadata {
@@ -87,15 +89,13 @@ pub fn get_metadata(hash: &str) -> Result<Metadata, io::Error> {
 /// Retrieves the `Metadata` for a given file.
 pub fn read_metadata(meta_path: &Path) -> Result<Metadata, io::Error> {
     match File::open(meta_path) {
-        Ok(meta_file) => {
-            match serde_json::from_reader::<_, Metadata>(meta_file) {
-                Ok(meta) => Ok(meta),
-                Err(e) => Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    format!("Could not parse metadata: {}", e),
-                )),
-            }
-        }
+        Ok(meta_file) => match serde_json::from_reader::<_, Metadata>(meta_file) {
+            Ok(meta) => Ok(meta),
+            Err(e) => Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Could not parse metadata: {}", e),
+            )),
+        },
         Err(e) => Err(e),
     }
 }
@@ -136,9 +136,7 @@ fn write_metadata(path: &Path, metadata: Metadata) -> Result<Metadata, io::Error
     parent.push(&meta_file_name);
     match File::create(&meta_file_name) {
         Ok(meta_file) => match serde_json::to_writer(meta_file, &metadata) {
-            Ok(_) => {
-                Ok(metadata)
-            }
+            Ok(_) => Ok(metadata),
             Err(e) => Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 format!(
@@ -155,6 +153,20 @@ fn write_metadata(path: &Path, metadata: Metadata) -> Result<Metadata, io::Error
             ),
         )),
     }
+}
+
+/// Lists all the Metadata.
+pub fn list() -> Vec<Metadata> {
+    glob("*.meta.json")
+        .unwrap()
+        .filter(|entry| entry.is_ok())
+        .map(|entry| match read_metadata(entry.unwrap().as_path()) {
+            Ok(meta) => Some(meta),
+            Err(_) => None,
+        })
+        .filter(|entry| entry.is_some())
+        .map(|entry| entry.unwrap())
+        .collect()
 }
 
 #[cfg(test)]
