@@ -21,4 +21,9 @@ pub enum TmpShareOpt {
     },
     #[structopt(name = "list")]
     List {},
+    #[structopt(name = "cleanup")]
+    Cleanup {
+        #[structopt(help = "Maximum age of a file")]
+        days: u16,
+    },
 }

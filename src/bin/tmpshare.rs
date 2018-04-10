@@ -20,5 +20,8 @@ pub fn main() {
                 println!("{}", meta);
             }
         }
+        TmpShareOpt::Cleanup { days } => {
+            tmpshare::storage::cleanup(days);
+        }
     }
 }

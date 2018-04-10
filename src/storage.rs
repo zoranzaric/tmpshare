@@ -1,8 +1,9 @@
 //! Abstracting away `Metadata` storage and file access.
+use chrono::Duration;
 use chrono::prelude::*;
 
 use std::fmt;
-use std::fs::File;
+use std::fs::{self, File};
 use std::io;
 use std::path::{Path, PathBuf};
 
@@ -167,6 +168,27 @@ pub fn list() -> Vec<Metadata> {
         .filter(|entry| entry.is_some())
         .map(|entry| entry.unwrap())
         .collect()
+}
+
+/// Remove files older than the supplied days.
+pub fn cleanup(days: u16) {
+    let duration = Duration::days(days as i64);
+
+    let threshold = Utc::now().naive_local() - duration;
+
+    for meta in list() {
+        if meta.create_date < threshold {
+            let meta_path_filename = format!("{}.meta.json", meta.hash);
+            let meta_path = Path::new(&meta_path_filename);
+            if !meta_path.exists() {
+                continue;
+            }
+
+            fs::remove_file(&Path::new(meta.file_name.as_str())).unwrap();
+            fs::remove_file(meta_path).unwrap();
+            println!("deleted {}", meta);
+        }
+    }
 }
 
 #[cfg(test)]
