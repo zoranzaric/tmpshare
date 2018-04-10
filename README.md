@@ -35,4 +35,4 @@ Hello World
   * [2018-04-02: Second session](https://www.youtube.com/watch?v=F3sG3aDQT_4) (http server, more setup)
   * [2018-04-06: Third session](https://youtu.be/2XOUEEjDSns) (error handling, refactoring, http file handling (`Content-Dispositon`-header))
   * [2018-04-07: Fourth session](https://youtu.be/ZUhlIU2yywc) (serde_json improvement, structopt, refactoring, list command)
-  * 2018-04-10: Fifth session (refactoring list, cleanup, 1.0.0 release)
+  * [2018-04-10: Fifth session](https://youtu.be/h-7MJuqqtZs) (refactoring list, cleanup, 1.0.0 release)
