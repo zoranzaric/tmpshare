@@ -3,7 +3,7 @@
 [![Crates.io](https://img.shields.io/crates/v/tmpshare.svg)](https://crates.io/crates/tmpshare)
 [![Documentation](https://docs.rs/tmpshare/badge.svg)](https://docs.rs/tmpshare/)
 ![License](https://img.shields.io/crates/l/tmpshare.svg)
-[![Build Status](https://travis-ci.org/zoranzaric/tmpshare-rs.svg?branch=master)](https://travis-ci.org/zoranzaric/tmpshare)
+[![Build Status](https://travis-ci.org/zoranzaric/tmpshare.svg?branch=master)](https://travis-ci.org/zoranzaric/tmpshare)
 
 `tmpshare` is a tool to share files.
 
