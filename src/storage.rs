@@ -1,6 +1,6 @@
 //! Abstracting away `Metadata` storage and file access.
-use chrono::Duration;
 use chrono::prelude::*;
+use chrono::Duration;
 
 use std::fmt;
 use std::fs::{self, File};

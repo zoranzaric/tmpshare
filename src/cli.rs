@@ -12,11 +12,15 @@ pub enum TmpShareOpt {
     },
     #[structopt(name = "serve", about = "Serves file via HTTP")]
     Serve {
-        #[structopt(long = "address", help = "Sets the address to bind the HTTP server to",
-                    default_value = "127.0.0.1")]
+        #[structopt(
+            long = "address",
+            help = "Sets the address to bind the HTTP server to",
+            default_value = "127.0.0.1"
+        )]
         address: String,
-        #[structopt(long = "port", help = "Sets the port to bind the HTTP server to",
-                    default_value = "8080")]
+        #[structopt(
+            long = "port", help = "Sets the port to bind the HTTP server to", default_value = "8080"
+        )]
         port: u16,
     },
     #[structopt(name = "list", about = "Lists files served by tmpshare")]
