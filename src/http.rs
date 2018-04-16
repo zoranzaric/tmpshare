@@ -2,15 +2,34 @@
 use std::path::Path;
 
 use rocket;
-use rocket::Request;
 use rocket::config::{Config, Environment};
+use rocket::http::uri::Segments;
+use rocket::request::FromSegments;
 use rocket::response;
 use rocket::response::{NamedFile, Response};
+use rocket::Request;
+
+use upspin;
 
 /// A served file.
 pub struct TmpShareFile {
     file: NamedFile,
     file_name: String,
+}
+
+#[derive(Debug)]
+pub struct UpspinPath {
+    path: String,
+}
+
+impl<'a> FromSegments<'a> for UpspinPath {
+    type Error = String;
+
+    fn from_segments(segments: Segments<'a>) -> Result<Self, Self::Error> {
+        Ok(UpspinPath {
+            path: segments.collect::<Vec<_>>().join("/"),
+        })
+    }
 }
 
 impl<'r> response::Responder<'r> for TmpShareFile {
@@ -38,6 +57,33 @@ fn get(hash: String) -> Option<TmpShareFile> {
     }
 }
 
+#[get("/upspin/<upspin_path..>")]
+fn upspin(upspin_path: UpspinPath) -> Option<TmpShareFile> {
+    let upspin_path: upspin::UpspinPath = match upspin_path.path.as_str().parse() {
+        Ok(upspin_path) => upspin_path,
+        Err(_) => {
+            return None;
+        }
+    };
+
+    let local_path = Path::new(upspin_path.file_name());
+
+    match upspin_path.get(&local_path) {
+        Ok(()) => {}
+        Err(_) => {
+            return None;
+        }
+    };
+
+    match NamedFile::open(local_path) {
+        Ok(named_file) => Some(TmpShareFile {
+            file: named_file,
+            file_name: upspin_path.file_name().to_string(),
+        }),
+        Err(_) => None,
+    }
+}
+
 #[error(404)]
 fn not_found(_req: &Request) -> String {
     "🤷‍♂️".to_string()
@@ -53,7 +99,7 @@ pub fn serve(address: &str, port: u16) {
         Ok(config) => {
             println!("Serving from http://{}:{}", address, port);
             rocket::custom(config, false)
-                .mount("/", routes![get])
+                .mount("/", routes![get, upspin])
                 .catch(errors![not_found])
                 .launch();
         }
