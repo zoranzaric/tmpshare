@@ -37,6 +37,9 @@ extern crate glob;
 extern crate tempfile;
 extern crate upspin;
 
+#[macro_use]
+extern crate failure;
+
 pub mod cli;
 pub mod http;
 pub mod storage;

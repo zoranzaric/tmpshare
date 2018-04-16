@@ -13,6 +13,8 @@ use upspin;
 
 use tempfile::tempdir;
 
+use failure::Error;
+
 /// A served file.
 pub struct TmpShareFile {
     file: NamedFile,
@@ -25,7 +27,7 @@ pub struct UpspinPath {
 }
 
 impl<'a> FromSegments<'a> for UpspinPath {
-    type Error = String;
+    type Error = Error;
 
     fn from_segments(segments: Segments<'a>) -> Result<Self, Self::Error> {
         Ok(UpspinPath {

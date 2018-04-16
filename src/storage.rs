@@ -4,7 +4,6 @@ use chrono::Duration;
 
 use std::fmt;
 use std::fs::{self, File};
-use std::io;
 use std::path::{Path, PathBuf};
 
 extern crate checksums;
@@ -13,6 +12,8 @@ extern crate serde;
 extern crate serde_json;
 
 use glob::glob;
+
+use failure::{Error, ResultExt};
 
 /// All the metadata for a served file.
 #[derive(Debug, Serialize, Deserialize)]
@@ -66,19 +67,19 @@ mod my_date_format {
 }
 
 /// Calculates the Sha256 hash for a given file.
-pub fn hash_file(path: &Path) -> Result<String, io::Error> {
+pub fn hash_file(path: &Path) -> Result<String, Error> {
     if !path.exists() {
-        return Err(io::Error::new(io::ErrorKind::NotFound, "File not found"));
+        return Err(format_err!("File not found"));
     }
     Ok(checksums::hash_file(path, checksums::Algorithm::SHA2256))
 }
 
 /// Retrieves the `Metadata` for a given hash.
-pub fn get_metadata(hash: &str) -> Result<Metadata, io::Error> {
+pub fn get_metadata(hash: &str) -> Result<Metadata, Error> {
     let meta_path_filename = format!("{}.meta.json", hash);
     let meta_path = Path::new(&meta_path_filename);
     if !meta_path.exists() {
-        return Err(io::Error::new(io::ErrorKind::NotFound, "File not found"));
+        return Err(format_err!("File not found"));
     }
 
     let mut meta = read_metadata(meta_path)?;
@@ -88,21 +89,16 @@ pub fn get_metadata(hash: &str) -> Result<Metadata, io::Error> {
 }
 
 /// Retrieves the `Metadata` for a given file.
-pub fn read_metadata(meta_path: &Path) -> Result<Metadata, io::Error> {
-    match File::open(meta_path) {
-        Ok(meta_file) => match serde_json::from_reader::<_, Metadata>(meta_file) {
-            Ok(meta) => Ok(meta),
-            Err(e) => Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                format!("Could not parse metadata: {}", e),
-            )),
-        },
-        Err(e) => Err(e),
+pub fn read_metadata(meta_path: &Path) -> Result<Metadata, Error> {
+    let meta_file = File::open(meta_path).context("Could not open meta file")?;
+    match serde_json::from_reader::<_, Metadata>(meta_file) {
+        Ok(meta) => Ok(meta),
+        Err(e) => Err(format_err!("Could not parse metadata: {}", e)),
     }
 }
 
 /// Constructs the `Metadata` for a given file and writes it to the filesystem.
-pub fn add(path: &Path) -> Result<Metadata, io::Error> {
+pub fn add(path: &Path) -> Result<Metadata, Error> {
     let hash = match hash_file(path) {
         Ok(hash) => hash,
         Err(err) => {
@@ -113,11 +109,11 @@ pub fn add(path: &Path) -> Result<Metadata, io::Error> {
         Some(file_name) => match file_name.to_str() {
             Some(file_name) => file_name,
             None => {
-                return Err(io::Error::new(io::ErrorKind::NotFound, "File not found"));
+                return Err(format_err!("File not found"));
             }
         },
         None => {
-            return Err(io::Error::new(io::ErrorKind::NotFound, "File not found"));
+            return Err(format_err!("File not found"));
         }
     };
     let metadata = Metadata::new(String::from(file_name), hash);
@@ -125,11 +121,11 @@ pub fn add(path: &Path) -> Result<Metadata, io::Error> {
     write_metadata(path, metadata)
 }
 
-fn write_metadata(path: &Path, metadata: Metadata) -> Result<Metadata, io::Error> {
+fn write_metadata(path: &Path, metadata: Metadata) -> Result<Metadata, Error> {
     let mut parent = match path.parent() {
         Some(parent) => PathBuf::from(parent),
         None => {
-            return Err(io::Error::new(io::ErrorKind::NotFound, "File not found"));
+            return Err(format_err!("File not found"));
         }
     };
 
@@ -138,20 +134,16 @@ fn write_metadata(path: &Path, metadata: Metadata) -> Result<Metadata, io::Error
     match File::create(&meta_file_name) {
         Ok(meta_file) => match serde_json::to_writer(meta_file, &metadata) {
             Ok(_) => Ok(metadata),
-            Err(e) => Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                format!(
-                    "An error occured while serializing the metadata \"{:?}\": {}",
-                    metadata, e
-                ),
+            Err(e) => Err(format_err!(
+                "An error occured while serializing the metadata \"{:?}\": {}",
+                metadata,
+                e
             )),
         },
-        Err(e) => Err(io::Error::new(
-            io::ErrorKind::InvalidData,
-            format!(
-                "An error occured while opening the file \"{}\": {}",
-                meta_file_name, e
-            ),
+        Err(e) => Err(format_err!(
+            "An error occured while opening the file \"{}\": {}",
+            meta_file_name,
+            e
         )),
     }
 }
