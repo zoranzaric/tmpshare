@@ -34,6 +34,7 @@ extern crate structopt;
 
 extern crate glob;
 
+extern crate tempfile;
 extern crate upspin;
 
 pub mod cli;

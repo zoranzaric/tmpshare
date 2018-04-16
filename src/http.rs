@@ -11,6 +11,8 @@ use rocket::Request;
 
 use upspin;
 
+use tempfile::tempdir;
+
 /// A served file.
 pub struct TmpShareFile {
     file: NamedFile,
@@ -66,7 +68,14 @@ fn upspin(upspin_path: UpspinPath) -> Option<TmpShareFile> {
         }
     };
 
-    let local_path = Path::new(upspin_path.file_name());
+    let tmpdir = match tempdir() {
+        Ok(tmpdir) => tmpdir,
+        Err(_) => {
+            return None;
+        }
+    };
+
+    let local_path = tmpdir.path().join(upspin_path.file_name());
 
     match upspin_path.get(&local_path) {
         Ok(()) => {}
