@@ -19,3 +19,5 @@
   * [2018-04-07: Session 4](https://youtu.be/ZUhlIU2yywc) (serde_json improvement, structopt, refactoring, list command)
   * [2018-04-10: Session 5](https://youtu.be/h-7MJuqqtZs) (refactoring list, cleanup, 1.0.0 release)
   * [2018-04-16: Session 6](https://youtu.be/xrSqq-rlmY0) (upspin route, failure crate, 1.0.1 release)
+  * [2018-04-22: Session 7](https://youtu.be/-ER6AzdziDQ) (adding and serving collections)
+
