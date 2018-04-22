@@ -11,6 +11,7 @@ repository = "https://github.com/zoranzaric/tmpshare.git"
 
 [dependencies]
 checksums = "0.5.5"
+uuid = { version = "0.6", features = ["v4"] }
 chrono = "0.4.1"
 serde = "1.0"
 serde_derive = "1.0"

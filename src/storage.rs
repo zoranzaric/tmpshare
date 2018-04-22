@@ -13,6 +13,8 @@ extern crate serde_json;
 
 use glob::glob;
 
+use uuid::Uuid;
+
 use failure::{Error, ResultExt};
 
 /// All the metadata for a served file.
@@ -40,6 +42,35 @@ impl Metadata {
 impl fmt::Display for Metadata {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}: {}", self.hash, self.file_name)
+    }
+}
+
+/// A collection of served files.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Collection {
+    pub hash: String,
+    pub entries: Vec<String>,
+    #[serde(with = "my_date_format")]
+    create_date: NaiveDateTime,
+    #[serde(with = "my_date_format")]
+    last_access_date: NaiveDateTime,
+}
+
+impl Collection {
+    pub fn new(entries: Vec<Metadata>) -> Self {
+        let my_uuid = Uuid::new_v4();
+        Collection {
+            hash: format!("{}", my_uuid).to_string(),
+            entries: entries.iter().map(|e| e.hash.clone()).collect(),
+            create_date: Utc::now().naive_local(),
+            last_access_date: Utc::now().naive_local(),
+        }
+    }
+}
+
+impl fmt::Display for Collection {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}: {}", self.hash, self.entries.join(", "))
     }
 }
 
@@ -97,6 +128,33 @@ pub fn read_metadata(meta_path: &Path) -> Result<Metadata, Error> {
     }
 }
 
+fn write_metadata(path: &Path, metadata: Metadata) -> Result<Metadata, Error> {
+    let mut parent = match path.parent() {
+        Some(parent) => PathBuf::from(parent),
+        None => {
+            return Err(format_err!("File not found"));
+        }
+    };
+
+    let meta_file_name = format!("{}.meta.json", metadata.hash);
+    parent.push(&meta_file_name);
+    match File::create(&meta_file_name) {
+        Ok(meta_file) => match serde_json::to_writer(meta_file, &metadata) {
+            Ok(_) => Ok(metadata),
+            Err(e) => Err(format_err!(
+                "An error occured while serializing the metadata \"{:?}\": {}",
+                metadata,
+                e
+            )),
+        },
+        Err(e) => Err(format_err!(
+            "An error occured while opening the file \"{}\": {}",
+            meta_file_name,
+            e
+        )),
+    }
+}
+
 /// Constructs the `Metadata` for a given file and writes it to the filesystem.
 pub fn add(path: &Path) -> Result<Metadata, Error> {
     let hash = match hash_file(path) {
@@ -121,7 +179,13 @@ pub fn add(path: &Path) -> Result<Metadata, Error> {
     write_metadata(path, metadata)
 }
 
-fn write_metadata(path: &Path, metadata: Metadata) -> Result<Metadata, Error> {
+pub fn add_collection(path: &Path, metadata: Vec<Metadata>) -> Result<Collection, Error> {
+    let collection = Collection::new(metadata);
+
+    write_collection(path, collection)
+}
+
+fn write_collection(path: &Path, collection: Collection) -> Result<Collection, Error> {
     let mut parent = match path.parent() {
         Some(parent) => PathBuf::from(parent),
         None => {
@@ -129,14 +193,14 @@ fn write_metadata(path: &Path, metadata: Metadata) -> Result<Metadata, Error> {
         }
     };
 
-    let meta_file_name = format!("{}.meta.json", metadata.hash);
+    let meta_file_name = format!("{}.meta.json", collection.hash);
     parent.push(&meta_file_name);
     match File::create(&meta_file_name) {
-        Ok(meta_file) => match serde_json::to_writer(meta_file, &metadata) {
-            Ok(_) => Ok(metadata),
+        Ok(meta_file) => match serde_json::to_writer(meta_file, &collection) {
+            Ok(_) => Ok(collection),
             Err(e) => Err(format_err!(
-                "An error occured while serializing the metadata \"{:?}\": {}",
-                metadata,
+                "An error occured while serializing the collectio \"{:?}\": {}",
+                collection,
                 e
             )),
         },

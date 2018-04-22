@@ -8,7 +8,7 @@ pub enum TmpShareOpt {
     #[structopt(name = "add", about = "Adds files to tmpshare")]
     Add {
         #[structopt(help = "The file to add", parse(from_os_str))]
-        filename: PathBuf,
+        filenames: Vec<PathBuf>,
     },
     #[structopt(name = "serve", about = "Serves file via HTTP")]
     Serve {

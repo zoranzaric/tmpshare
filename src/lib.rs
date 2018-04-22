@@ -40,6 +40,8 @@ extern crate upspin;
 #[macro_use]
 extern crate failure;
 
+extern crate uuid;
+
 pub mod cli;
 pub mod http;
 pub mod storage;
