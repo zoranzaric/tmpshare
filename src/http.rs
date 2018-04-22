@@ -5,8 +5,7 @@ use rocket;
 use rocket::config::{Config, Environment};
 use rocket::http::uri::Segments;
 use rocket::request::FromSegments;
-use rocket::response;
-use rocket::response::{NamedFile, Response};
+use rocket::response::{self, content::Html, NamedFile, Response};
 use rocket::Request;
 
 use upspin;
@@ -61,6 +60,26 @@ fn get(hash: String) -> Option<TmpShareFile> {
     }
 }
 
+#[get("/list/<hash>")]
+fn list(hash: String) -> Option<Html<String>> {
+    match super::storage::get_collection(&hash) {
+        Ok(collection) => {
+            let lis = collection
+                .entries
+                .iter()
+                .map(|e| format!("<li><a href=\"/get/{}\">{}</a></li>", e, e))
+                .collect::<Vec<_>>()
+                .join("\n");
+            let html = format!(
+                "<html><body><h1>Collection: {}</h1><ul>{}</ul></body></html>",
+                collection.hash, lis
+            );
+            Some(Html(html.to_string()))
+        }
+        Err(_) => None,
+    }
+}
+
 #[get("/upspin/<upspin_path..>")]
 fn upspin(upspin_path: UpspinPath) -> Option<TmpShareFile> {
     let upspin_path: upspin::UpspinPath = match upspin_path.path.as_str().parse() {
@@ -110,7 +129,7 @@ pub fn serve(address: &str, port: u16) {
         Ok(config) => {
             println!("Serving from http://{}:{}", address, port);
             rocket::custom(config, false)
-                .mount("/", routes![get, upspin])
+                .mount("/", routes![get, list, upspin])
                 .catch(errors![not_found])
                 .launch();
         }

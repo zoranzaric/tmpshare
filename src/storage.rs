@@ -179,6 +179,7 @@ pub fn add(path: &Path) -> Result<Metadata, Error> {
     write_metadata(path, metadata)
 }
 
+/// Constructs the `Collection` for given `Metadata`s and writes it to the filesystem.
 pub fn add_collection(path: &Path, metadata: Vec<Metadata>) -> Result<Collection, Error> {
     let collection = Collection::new(metadata);
 
@@ -193,7 +194,7 @@ fn write_collection(path: &Path, collection: Collection) -> Result<Collection, E
         }
     };
 
-    let meta_file_name = format!("{}.meta.json", collection.hash);
+    let meta_file_name = format!("{}.collection.json", collection.hash);
     parent.push(&meta_file_name);
     match File::create(&meta_file_name) {
         Ok(meta_file) => match serde_json::to_writer(meta_file, &collection) {
@@ -209,6 +210,29 @@ fn write_collection(path: &Path, collection: Collection) -> Result<Collection, E
             meta_file_name,
             e
         )),
+    }
+}
+
+/// Retrieves the `Collection` for a given hash.
+pub fn get_collection(hash: &str) -> Result<Collection, Error> {
+    let meta_path_filename = format!("{}.collection.json", hash);
+    let meta_path = Path::new(&meta_path_filename);
+    if !meta_path.exists() {
+        return Err(format_err!("File not found"));
+    }
+
+    let mut meta = read_collection(meta_path)?;
+    meta.last_access_date = Utc::now().naive_local();
+
+    write_collection(meta_path, meta)
+}
+
+/// Retrieves the metadata for a given collection file.
+pub fn read_collection(meta_path: &Path) -> Result<Collection, Error> {
+    let meta_file = File::open(meta_path).context("Could not open collection meta file")?;
+    match serde_json::from_reader::<_, Collection>(meta_file) {
+        Ok(meta) => Ok(meta),
+        Err(e) => Err(format_err!("Could not parse collection metadata: {}", e)),
     }
 }
 
